@@ -27,22 +27,21 @@ SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" &>/dev/null && pwd)"
 source "${SCRIPT_DIR}/models/qwen3-4B.sh"
 
 CKPT_ARGS=(
-   --hf-checkpoint /root/Qwen3-4B-Base/
-   --ref-load /root/Qwen3-4B-Base_torch_dist
-   --load /root/Qwen3-4B-Base_slime/
-   --save /root/Qwen3-4B-Base_slime/
+   --hf-checkpoint /mnt/datasets/Qwen3-4B-Base/
+   --ref-load /mnt/datasets/qwen3_4b_base_torch_dist
+   --load /mnt/datasets/Qwen3-4B-Base_slime/
+   --save /mnt/datasets/Qwen3-4B-Base_slime/
    --save-interval 1000
 )
 
 SFT_ARGS=(
    --rollout-function-path slime.rollout.sft_rollout.generate_rollout
-   --prompt-data /root/openhermes2_5.parquet
+   --prompt-data /mnt/datasets/openhermes2_5.parquet
    --input-key messages
-   # --apply-chat-template
    --rollout-shuffle
    --num-epoch 3
-   --rollout-batch-size 128
-   --global-batch-size 128
+   --rollout-batch-size 16
+   --global-batch-size 16
 
    --loss-type sft_loss
    --calculate-per-token-loss
@@ -64,7 +63,7 @@ PERF_ARGS=(
 
    # --micro-batch-size 1
    --use-dynamic-batch-size
-   --max-tokens-per-gpu 9216
+   --max-tokens-per-gpu 2048
 )
 
 OPTIMIZER_ARGS=(
@@ -90,7 +89,7 @@ MISC_ARGS=(
    --attention-dropout 0.0
    --hidden-dropout 0.0
    # should be good for model performance
-   --accumulate-allreduce-grads-in-fp32
+   # --accumulate-allreduce-grads-in-fp32
    --attention-softmax-in-fp32
    # need to comment this when using model with MLA
    --attention-backend flash
@@ -99,7 +98,7 @@ MISC_ARGS=(
 # launch the master node of ray in container
 export MASTER_ADDR=${MASTER_ADDR:-"127.0.0.1"}
 export no_proxy="127.0.0.1,${MASTER_ADDR}"
-ray start --head --node-ip-address ${MASTER_ADDR} --num-gpus 8 --disable-usage-stats --dashboard-host=0.0.0.0 --dashboard-port=8265
+ray start --head --node-ip-address ${MASTER_ADDR} --num-gpus 1 --disable-usage-stats --dashboard-host=0.0.0.0 --dashboard-port=8265
 
 
 # Build the runtime environment JSON with proper variable substitution
@@ -116,7 +115,7 @@ ray job submit --address="http://127.0.0.1:8265" \
    --runtime-env-json="${RUNTIME_ENV_JSON}" \
    -- python3 train_async.py \
    --actor-num-nodes 1 \
-   --actor-num-gpus-per-node 8 \
+   --actor-num-gpus-per-node 1 \
    ${MODEL_ARGS[@]} \
    ${CKPT_ARGS[@]} \
    ${SFT_ARGS[@]} \

@@ -7,6 +7,8 @@
 
 # TO-DO-List:
 - [ ] Generator
+  - [x] Dataset Prep
+  - [x] Convert to slime Format
 - [ ] GRPO
   - [x] [1N4G](scripts/run-qwen3-4B.sh)
   - [ ] 2N16G

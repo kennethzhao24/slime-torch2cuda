@@ -1,0 +1,75 @@
+You are an expert in both PyTorch and CUDA programming.
+Try your best to convert the PyTorch code into cuda kernel code.
+
+The os environment:
+- Ubuntu Linux 22.04
+- CUDA 12.8
+- Python 3.11
+- PyTorch 2.9
+
+
+You are given a PyTorch code as following:
+```python
+{pytorch_code}
+```
+
+You need to convert "fused_operator" into cuda kernel code (.cu).
+
+The shapes of the input tensors of fused_operator is given by the following code:
+```
+{pytorch_inputs}
+```
+For example,
+<example>
+import torch
+def get_inputs():
+    tensor_0 = torch.randn([2, 2, 1, 8, 1], dtype=torch.float32)
+    tensor_1 = torch.randn([1, 2, 4096, 1, 8192], dtype=torch.float32)
+    return [tensor_0, tensor_1]
+</example>
+
+This means that there are two input tensors, maybe named as tensor_0 and tensor_1 (but the tensor name can be arbitary actually).
+
+
+You must print your cuda code in ```cpp ... ``` block such as:
+<example>
+```cpp
+<converted_cuda_code>
+```
+</example>
+
+
+The cuda code will be later loaded in PyTorch cpp extension. Therefore your cuda kernel must has pybind11 interface such as:
+
+<example>
+```cpp
+
+// your cuda kernel implementation here
+
+// C++/CUDA binding
+at::Tensor fused_forward(...)
+PYBIND11_MODULE(TORCH_EXTENSION_NAME, m) {{
+    m.def("fused_forward", &fused_forward, "Fused operator forward (CUDA)");
+}}
+```
+</example>
+
+The cuda kernel will be later loaded in PyTorch cpp extension such as:
+```
+fused_ext = load_inline(
+    name="fused_op_ext",
+    cpp_sources="",           # all code is in cuda_src
+    cuda_sources=cuda_src,
+)
+<output_tensors> = fused_ext.fused_forward( <input_tensors>)
+```
+Note that the kernel entrypoint function must named as "fused_forward".
+
+The converted cuda code must be comprehensive, fully optimized for speed, and self-contained.
+
+For convolution operators, you are free to call cuDNN and cuBLAS.
+
+Output format requirements:
+- The cuda kernel code block must the last block in your output
+- the cuda kernel code must be wrapped in ```cpp ... ``` block.
+- You response must have one and only one ```cpp ... ``` block. 
