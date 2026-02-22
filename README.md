@@ -8,25 +8,25 @@
 # TO-DO-List:
 - [ ] Generator
 - [ ] GRPO
-  - [x] 1N4G
+  - [x] [1N4G](scripts/run-qwen3-4B.sh)
   - [ ] 2N16G
 - [ ] SFT
 
 ## Env Setup
-Docker/appatiner is used for setup on NCSA Delta
+Docker/appatiner is used for setup on [NCSA Delta](https://docs.ncsa.illinois.edu/systems/delta/en/latest/user_guide/architecture.html).
 
 ### 1. Download the image from dockerhub and convert to apptainer format
 ```bash
 apptainer pull slime.sif docker://slimerl/slime:latest
 ```
-### 2. Request a GPU-interactive allocation, and ssh into the GPU. Bind the dataset and huggingface cache directories, and run the container 
+### 2. Request a GPU-interactive allocation, assh into the GPU, and run the container 
 ```bash
 salloc --mem=220g --nodes=1 --ntasks-per-node=4 --cpus-per-task=4 --partition=gpuA100x4-interactive --account=bekz-delta-gpu --time=00:30:00 --gpus-per-node=4
 
 ssh gpuaxxx
 
-apptainer run --nv --bind /work/nvme/bekz/yzhao25/huggingface:/mnt/huggingface \
-                   --bind /work/nvme/bcrc/yzhao25/rl_datasets:/mnt/datasets \
+apptainer run --nv --bind /work/nvme/bekz/yzhao25/huggingface:/mnt/huggingface \ # bind huggingface cache path
+                   --bind /work/nvme/bcrc/yzhao25/rl_datasets:/mnt/datasets \ # bind the datasets and model path
                    /u/yzhao25/slime/slime.sif \
                    /bin/bash --login
 ```
@@ -48,7 +48,7 @@ source scripts/models/qwen3-4B.sh
 CUDA_DEVICE_MAX_CONNECTIONS=1 PYTHONPATH=/root/Megatron-LM torchrun --nproc_per_node=4 \
   tools/convert_hf_to_torch_dist.py \
   ${MODEL_ARGS[@]} \
-  --tensor-model-parallel-size 2 \
+  --tensor-model-parallel-size 2 \ # this should be consistent with your PERF_ARGS
   --pipeline-model-parallel-size 2 \
   --hf-checkpoint /mnt/datasets/Qwen3-4B \
   --make-vocab-size-divisible-by 1 \
@@ -56,11 +56,14 @@ CUDA_DEVICE_MAX_CONNECTIONS=1 PYTHONPATH=/root/Megatron-LM torchrun --nproc_per_
 ```
 
 ### 3. Run GRPO on Qwen3-4B
-
 ```bash
 bash scripts/run-qwen3-4B.sh 2>&1 | tee run.log
 ```
 
+### 4. Alternatively, you can submit slurm jobs by running:
+```bash
+sbatch scripts/slurm_scripts/run_qwen3_4b.slurm
+```
 
 
 ## Arguments Walkthrough
