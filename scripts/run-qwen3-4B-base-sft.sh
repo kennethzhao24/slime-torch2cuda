@@ -40,8 +40,8 @@ SFT_ARGS=(
    --input-key messages
    --rollout-shuffle
    --num-epoch 3
-   --rollout-batch-size 16
-   --global-batch-size 16
+   --rollout-batch-size 128
+   --global-batch-size 128
 
    --loss-type sft_loss
    --calculate-per-token-loss
@@ -50,7 +50,7 @@ SFT_ARGS=(
 )
 
 PERF_ARGS=(
-   --tensor-model-parallel-size 1
+   --tensor-model-parallel-size 2
    --sequence-parallel
    --pipeline-model-parallel-size 1
    --context-parallel-size 1
@@ -63,7 +63,7 @@ PERF_ARGS=(
 
    # --micro-batch-size 1
    --use-dynamic-batch-size
-   --max-tokens-per-gpu 2048
+   --max-tokens-per-gpu 9216
 )
 
 OPTIMIZER_ARGS=(
@@ -78,9 +78,10 @@ OPTIMIZER_ARGS=(
 )
 
 WANDB_ARGS=(
-   # --use-wandb
-   # --wandb-project slime-dev
-   # --wandb-group qwen3-4B-base-sft
+   --use-wandb
+   --wandb-project slime-torch2cuda
+   --wandb-group qwen3-4B-base-sft
+   --wandb-mode offline
    # --wandb-key ${WANDB_KEY}
 )
 
@@ -98,7 +99,7 @@ MISC_ARGS=(
 # launch the master node of ray in container
 export MASTER_ADDR=${MASTER_ADDR:-"127.0.0.1"}
 export no_proxy="127.0.0.1,${MASTER_ADDR}"
-ray start --head --node-ip-address ${MASTER_ADDR} --num-gpus 1 --disable-usage-stats --dashboard-host=0.0.0.0 --dashboard-port=8265
+ray start --head --node-ip-address ${MASTER_ADDR} --num-gpus 4 --disable-usage-stats --dashboard-host=0.0.0.0 --dashboard-port=8265
 
 
 # Build the runtime environment JSON with proper variable substitution
@@ -107,7 +108,8 @@ RUNTIME_ENV_JSON="{
     \"PYTHONPATH\": \"/root/Megatron-LM/\",
     \"CUDA_DEVICE_MAX_CONNECTIONS\": \"1\",
     \"NCCL_NVLS_ENABLE\": \"${HAS_NVLINK}\",
-    \"PYTORCH_CUDA_ALLOC_CONF\": \"expandable_segments:True\"
+    \"PYTORCH_CUDA_ALLOC_CONF\": \"expandable_segments:True\",
+    \"SSL_CERT_FILE\": \"\"
   }
 }"
 
@@ -115,7 +117,7 @@ ray job submit --address="http://127.0.0.1:8265" \
    --runtime-env-json="${RUNTIME_ENV_JSON}" \
    -- python3 train_async.py \
    --actor-num-nodes 1 \
-   --actor-num-gpus-per-node 1 \
+   --actor-num-gpus-per-node 4 \
    ${MODEL_ARGS[@]} \
    ${CKPT_ARGS[@]} \
    ${SFT_ARGS[@]} \

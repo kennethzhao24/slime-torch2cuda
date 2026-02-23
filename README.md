@@ -13,6 +13,8 @@
   - [x] [1N4G](scripts/run-qwen3-4B.sh)
   - [ ] 2N16G
 - [ ] SFT
+  - [x] [1N4G](scripts/run-qwen3-4B-base-sft.sh)
+  - [ ] 2N16G
 
 ## Env Setup
 Docker/appatiner is used for setup on [NCSA Delta](https://docs.ncsa.illinois.edu/systems/delta/en/latest/user_guide/architecture.html).
@@ -33,7 +35,7 @@ apptainer run --nv --bind /work/nvme/bekz/yzhao25/huggingface:/mnt/huggingface \
                    /bin/bash --login
 ```
 
-## Run Qwen3-4B with GRPO on DAPO-MATH
+## Example 1: Run Qwen3-4B with GRPO on DAPO-MATH
 
 ### 1. Download models and datasets
 ```bash
@@ -64,9 +66,21 @@ bash scripts/run-qwen3-4B.sh 2>&1 | tee run.log
 
 ### 4. Alternatively, you can submit slurm jobs by running:
 ```bash
-sbatch scripts/slurm_scripts/run_qwen3_4b.slurm
+sbatch scripts/slurm_scripts/run_qwen3_4b_grpo.slurm
 ```
 
+## Example 2: Run Qwen3-4B with SFT on Open-Hermes
+
+### 1. You can follow [qwen3-4b-base-openhermes.md](./docs/en/examples/qwen3-4b-base-openhermes.md) to download model and datasets
+
+### 2. Run SFT on Qwen3-4B
+```bash
+bash scripts/run-qwen3-4B-base-sft.sh 2>&1 | tee run_sft.log
+```
+### 3. Alternatively, you can submit slurm jobs by running:
+```bash
+sbatch scripts/slurm_scripts/run_qwen3_4b_sft.slurm
+```
 
 ## Arguments Walkthrough
 
